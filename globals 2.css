@@ -1,0 +1,269 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 18px;
+  
+  /* Ayvlo Dark Theme Colors */
+  --obsidian-black: #0E0E11;
+  --ash-graphite: #1E1F23;
+  --cold-steel: #565A66;
+  --hyper-white: #F8F8F8;
+  --electric-taupe: #C6A678;
+  --signal-blue: #3F8EFC;
+  
+  /* Dark mode as default */
+  --background: #0E0E11;
+  --foreground: #F8F8F8;
+  --card: #1E1F23;
+  --card-foreground: #F8F8F8;
+  --popover: #1E1F23;
+  --popover-foreground: #F8F8F8;
+  --primary: #C6A678;
+  --primary-foreground: #0E0E11;
+  --secondary: #1E1F23;
+  --secondary-foreground: #F8F8F8;
+  --muted: #565A66;
+  --muted-foreground: #F8F8F8;
+  --accent: #C6A678;
+  --accent-foreground: #0E0E11;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: #565A66;
+  --input: #565A66;
+  --input-background: #1E1F23;
+  --switch-background: #565A66;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #3F8EFC;
+  --chart-1: #C6A678;
+  --chart-2: #3F8EFC;
+  --chart-3: #565A66;
+  --chart-4: #F8F8F8;
+  --chart-5: #1E1F23;
+  --radius: 0.625rem;
+  --sidebar: #1E1F23;
+  --sidebar-foreground: #F8F8F8;
+  --sidebar-primary: #C6A678;
+  --sidebar-primary-foreground: #0E0E11;
+  --sidebar-accent: #565A66;
+  --sidebar-accent-foreground: #F8F8F8;
+  --sidebar-border: #565A66;
+  --sidebar-ring: #3F8EFC;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: 0.02em;
+  }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: 4.5rem;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: 0.02em;
+    }
+
+    h2 {
+      font-size: 3rem;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: 0.02em;
+    }
+
+    h3 {
+      font-size: 2rem;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: 0.03em;
+    }
+
+    h4 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      line-height: 1.4;
+      letter-spacing: 0.03em;
+    }
+
+    p {
+      font-size: 1.125rem;
+      font-weight: 400;
+      line-height: 1.7;
+      letter-spacing: 0.01em;
+    }
+
+    label {
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.5;
+      letter-spacing: 0.02em;
+    }
+
+    button {
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.5;
+      letter-spacing: 0.03em;
+    }
+
+    input {
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+  scroll-behavior: smooth;
+}
+
+/* Custom utilities for Ayvlo */
+.text-electric-taupe {
+  color: #C6A678;
+}
+
+.text-signal-blue {
+  color: #3F8EFC;
+}
+
+.bg-obsidian-black {
+  background-color: #0E0E11;
+}
+
+.bg-ash-graphite {
+  background-color: #1E1F23;
+}
+
+.border-cold-steel {
+  border-color: #565A66;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Glow effects */
+.glow-electric-taupe {
+  box-shadow: 0 0 20px rgba(198, 166, 120, 0.3);
+}
+
+.glow-signal-blue {
+  box-shadow: 0 0 20px rgba(63, 142, 252, 0.3);
+}
+
+/* Animated gradient background */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animated-gradient {
+  background: linear-gradient(270deg, #0E0E11, #1E1F23, #0E0E11);
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* Glass-morphism utilities */
+.glass {
+  background: rgba(30, 31, 35, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(86, 90, 102, 0.3);
+}
+
+.glass-strong {
+  background: rgba(30, 31, 35, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(86, 90, 102, 0.5);
+}
+
+/* Grain texture overlay */
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+/* Depth shadows */
+.depth-shadow {
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    0 2px 4px -1px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(86, 90, 102, 0.1);
+}
+
+.depth-shadow-lg {
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(86, 90, 102, 0.1);
+}
+
+/* Radial gradient utility */
+.bg-gradient-radial {
+  background: radial-gradient(circle at center, var(--tw-gradient-stops));
+}

@@ -1,0 +1,399 @@
+// Ayvlo SaaS - Complete Multi-Tenant Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Optional: for Supabase connection pooling
+}
+
+// ============================================
+// AUTH & USER MODELS
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  memberships   OrgMember[]
+  apiKeys       ApiKey[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// ORGANIZATION & MULTI-TENANCY
+// ============================================
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+
+  // Relations
+  members       OrgMember[]
+  workspaces    Workspace[]
+  webhooks      WebhookEndpoint[]
+  featureFlags  FeatureFlag[]
+  billing       BillingInfo?
+  apiKeys       ApiKey[]
+  auditLogs     AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+}
+
+model OrgMember {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrgRole  @default(MEMBER)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// ============================================
+// WORKSPACES & DATA
+// ============================================
+
+model Workspace {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  organizationId String
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dataSources  DataSource[]
+  anomalies    Anomaly[]
+  workflows    Workflow[]
+  alerts       Alert[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model DataSource {
+  id          String   @id @default(cuid())
+  workspaceId String
+  type        String   // "stripe" | "postgres" | "hubspot" | "shopify" | "api"
+  name        String
+  config      Json     // connection details, credentials (encrypted)
+  isActive    Boolean  @default(true)
+  lastSyncAt  DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
+// ============================================
+// AYVLO AI CORE - ANOMALIES
+// ============================================
+
+model Anomaly {
+  id          String   @id @default(cuid())
+  workspaceId String
+  metric      String   // e.g. "stripe.mrr", "churn_rate", "active_users"
+  severity    Int      // 0-100
+  detectedAt  DateTime @default(now())
+  payload     Json     // raw data that triggered detection
+  explanation String?  @db.Text
+  status      AnomalyStatus @default(OPEN)
+
+  // AI fields
+  aiScore     Float?   // confidence score from detector
+  actionTaken String?  // what automated action was run
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId, detectedAt])
+  @@index([status])
+}
+
+enum AnomalyStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+  FALSE_POSITIVE
+}
+
+// ============================================
+// WORKFLOWS & AUTOMATION
+// ============================================
+
+model Workflow {
+  id          String  @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+
+  // Trigger config
+  trigger     Json    // { type: "anomaly_detected", conditions: {...} }
+
+  // Actions array
+  actions     Json    // [{ type: "slack", config: {...} }, { type: "webhook", ... }]
+
+  isActive    Boolean @default(true)
+  runCount    Int     @default(0)
+  lastRunAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  workspaceId String
+  type        String   // "anomaly" | "workflow" | "system"
+  title       String
+  body        String?  @db.Text
+  severity    String   @default("info") // "info" | "warning" | "critical"
+  meta        Json?
+  read        Boolean  @default(false)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([read])
+}
+
+// ============================================
+// AUDIT & ACTIVITY
+// ============================================
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String   // "org.member.added", "workspace.created", "anomaly.detected"
+  entity         String?  // "Organization", "Workspace", "Anomaly"
+  entityId       String?
+  ip             String?
+  userAgent      String?
+  meta           Json?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([userId])
+  @@index([action])
+}
+
+// ============================================
+// WEBHOOKS & INTEGRATIONS
+// ============================================
+
+model WebhookEndpoint {
+  id             String   @id @default(cuid())
+  organizationId String
+  label          String
+  url            String
+  secret         String   // for signing payloads
+  events         String[] // which events to send
+  isActive       Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  failureCount   Int      @default(0)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+// ============================================
+// FEATURE FLAGS & EXPERIMENTS
+// ============================================
+
+model FeatureFlag {
+  id             String   @id @default(cuid())
+  organizationId String
+  key            String   // "autonomous_workflows", "ai_insights"
+  enabled        Boolean  @default(false)
+  config         Json?    // variant config, rollout percentage, etc.
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, key])
+  @@index([key])
+}
+
+// ============================================
+// BILLING & SUBSCRIPTIONS
+// ============================================
+
+model BillingInfo {
+  id                 String    @id @default(cuid())
+  organizationId     String    @unique
+  stripeCustomerId   String    @unique
+  stripeSubscriptionId String?
+  plan               String    @default("starter") // "starter" | "pro" | "enterprise"
+  status             String    @default("active")  // "active" | "trialing" | "canceled" | "past_due"
+  seats              Int       @default(5)
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stripeCustomerId])
+}
+
+// ============================================
+// API KEYS & TOKENS
+// ============================================
+
+model ApiKey {
+  id             String    @id @default(cuid())
+  organizationId String
+  userId         String?
+  name           String
+  keyPrefix      String    // first 8 chars for display
+  keyHash        String    @unique // bcrypt hash of full key
+  permissions    String[]  @default(["read"]) // "read", "write", "admin"
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([keyHash])
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "anomaly_detected" | "workflow_completed" | "billing_issue"
+  title     String
+  body      String?  @db.Text
+  link      String?
+  read      Boolean  @default(false)
+  meta      Json?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([read])
+}
+
+// ============================================
+// USAGE & ANALYTICS (for billing)
+// ============================================
+
+model UsageRecord {
+  id             String   @id @default(cuid())
+  organizationId String
+  metric         String   // "api_calls", "anomalies_detected", "workflows_run"
+  quantity       Int
+  periodStart    DateTime
+  periodEnd      DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, periodStart])
+  @@index([metric])
+}
